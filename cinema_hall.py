@@ -1,72 +1,84 @@
-class Star_Cinema: 
-    def __init__(self):
-        self._hall_list = []
+class Star_Cinema:
+    hall_list = []
 
-    def entry_hall(self, rows, cols, hall_no):
-        hall = Hall(rows, cols, hall_no)
-        self._hall_list.append(hall)
+    @classmethod
+    def entry_hall(cls, hall):
+        cls.hall_list.append(hall)
 
 class Hall:
     def __init__(self, rows, cols, hall_no):
-        self._rows = rows
-        self._cols = cols
-        self._hall_no = hall_no
-        self._seats = {}
-        self._show_list = []
+        self.__rows = rows
+        self.__cols = cols
+        self.__hall_no = hall_no
+        self.__seats = {}
+        self.__show_list = []
 
-    def entry_show(self, id, movie_name, time):
-        show = (id, movie_name, time)
-        self._show_list.append(show)
-        self._allocate_seats()
-        self._seats[id] = self._allocate_seats()
-
-    def _allocate_seats(self):
-        seats = []
-        for index in range(self._rows):
-            row = ['Free'] * self._cols
-            seats.append(row)
+    def __create_seats(self):
+        seats = [['Free' for index in range(self.__cols)] for index in range(self.__rows)]
         return seats
-    
-    def book_seats(self, show_id, seat_list):
-        if show_id in self._seats:
-            for row, col in seat_list:
-                if 0 <= row < self._rows and 0 <= col < self._cols:
-                    if self._seats[show_id][row][col] == 'Free':
-                        self._seats[show_id][row][col] = 'Booked'
-                    else:
-                        print(f"Seat at row {row}, col {col} is already booked.")
-                else:
-                    print(f"Invalid seat position: row {row}, col {col}.")
-        else:
-            print(f"Show with ID {show_id} is not found.")
 
-    def view_show_list(self):
-        for show_id, movie_name, time in self._show_list:
-            print(f"ID: {show_id}, Movie: {movie_name}, Time: {time}")
+    def entry_show(self, show_id, movie_name, show_time):
+        show_info = (show_id, movie_name, show_time)
+        self.__show_list.append(show_info)
+
+        self.__seats[show_id] = self.__create_seats()
+
+    def book_seats(self, show_id, seats_to_book):
+        if show_id in self.__seats:
+            for seat in seats_to_book:
+                row, col = seat
+                if 1 <= row <= self.__rows and 1 <= col <= self.__cols:
+                    if self.__seats[show_id][row - 1][col - 1] == 'Free':
+                        self.__seats[show_id][row - 1][col - 1] = 'Booked'
+                        print(f"Your seat {row}{chr(64 + col)} has been successfully.booked")
+                    else:
+                        print(f"Seat {row}{chr(64 + col)} is already booked.")
+                else:
+                    print(f"Invalid seat {row}{chr(64 + col)} for show ID {show_id}.")
+        else:
+            print(f"Show with ID {show_id} does not exist.")
+
+    def __view_show_list(self):
+        print("The shows which are running now:")
+        for show_info in self.__show_list:
+            print(f"ID: {show_info[0]}, Movie: {show_info[1]}, Time: {show_info[2]}")
+
+    def __view_available_seats(self, show_id):
+        if show_id in self.__seats:
+            print(f"Available seats for show ID {show_id}:")
+            for row in range(self.__rows):
+                for col in range(self.__cols):
+                    if self.__seats[show_id][row][col] == 'Free':
+                        print(f"Row {row + 1}, Seat {chr(65 + col)}")
+        else:
+            print(f"Show with ID {show_id} does not exist.")
+
+class CounterReplica:
+    def __init__(self, hall):
+        self.__hall = hall
+
+    def view_all_shows(self):
+        self.__hall._Hall__view_show_list()
 
     def view_available_seats(self, show_id):
-        if show_id in self._seats:
-            print(f"Available seats:")
-            for row in range(self._rows):
-                for col in range(self._cols):
-                    if self._seats[show_id][row][col] == 'Free':
-                        print(f"Row {row}, Col {col}")
-        else:
-            print(f"Show with ID {show_id} is not found.")
+        self.__hall._Hall__view_available_seats(show_id)
 
-cinema = Star_Cinema()
+    def book_tickets(self, show_id, seats_to_book):
+        self.__hall.book_seats(show_id, seats_to_book)
 
-hall1 = Hall(rows=10, cols=10, hall_no=1)
-hall1.entry_show(id=1, movie_name="Your Name", time="18:00")
-hall1.entry_show(id=2, movie_name="Suzume no tojimari", time="20:00")
 
-cinema.entry_hall(rows=10, cols=10, hall_no=1)
+hall1 = Hall(10, 10, 1)
 
-print("Shows Running:")
-cinema._hall_list[0].view_show_list()
+hall1.entry_show("S1", "Your Name", "6:00 PM")
+hall1.entry_show("S2", "Garden of words", "9:00 PM")
 
-print("Available Seats for Show ID 1:")
-cinema._hall_list[0].view_available_seats(1)
+counter = CounterReplica(hall1)
 
-print("Tickets for Show ID 1:")
-cinema._hall_list[0].book_seats(1, [(0, 0), (0, 1), (1, 1)])
+print("All shows running:")
+counter.view_all_shows()
+
+print("Viewing available seats:")
+counter.view_available_seats("S1")
+
+print("Booking tickets:")
+counter.book_tickets("S1", [(1, 1), (2, 2), (3, 3)])
